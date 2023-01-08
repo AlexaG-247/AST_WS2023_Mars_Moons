@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, type Ref, watch } from "vue";
 import SolarSystem from './components/SolarSystem.vue'
-import { Moon, type Interval, CalculateTimestamp, CalculateDifference, MoonMaxIntervalMinutes } from "./functions/Moon";
+import { Moon, type Interval, CalculateTimestamp, CalculateDifference, MoonIntervals } from "./functions/Moon";
 
 const HOUR_MIN = 0;
 const HOUR_MAX = 24;
@@ -18,7 +18,6 @@ const deimosSetHours = ref(HOUR_MIN)
 const deimosSetMinutes = ref(MINUTE_MIN)
 const moonMinutes = ref(0)
 const moonInterval = ref<Array<Interval>>([])
-const errorMessage = ref("")
 
 watch(phobosRiseHours, (newValue) => {addWatcherHours(phobosRiseHours, newValue)})
 watch(phobosSetHours, (newValue) => {addWatcherHours(phobosSetHours, newValue)})
@@ -49,14 +48,19 @@ function addWatcherMinutes(reference: Ref<number>, value: number){
 }
 
 function calculateOverlappingMoonMinutes(): void {
-  moonInterval.value = Moon(
+  moonInterval.value = MoonIntervals(
     phobosRiseHours.value, phobosRiseMinutes.value,
     phobosSetHours.value, phobosSetMinutes.value,
     deimosRiseHours.value, deimosRiseMinutes.value,
     deimosSetHours.value, deimosSetMinutes.value
   )
 
-  moonMinutes.value = MoonMaxIntervalMinutes(moonInterval.value)
+  moonMinutes.value = Moon(
+    phobosRiseHours.value, phobosRiseMinutes.value,
+    phobosSetHours.value, phobosSetMinutes.value,
+    deimosRiseHours.value, deimosRiseMinutes.value,
+    deimosSetHours.value, deimosSetMinutes.value
+  )
 }
 
 function addLeadingZeros(num: number){
@@ -158,7 +162,6 @@ function addLeadingZeros(num: number){
             Interval from {{addLeadingZeros(interval.start)}} to {{addLeadingZeros(interval.end)}}: {{CalculateDifference(interval.start, interval.end)}} min
           </div>
         </div>
-        <div v-if="errorMessage" class="font-mono font-semibold text-red-500">Error: {{errorMessage}}</div>
       </div>
 
       </div>

@@ -6,7 +6,7 @@ export type Interval = {
 const DAY_MIN = 0;
 const DAY_MAX = 2500;
 
-export function Moon(phobosRiseHour: number, phobosRiseMinute: number, phobosSetHour: number, phobosSetMinute: number, deimosRiseHour: number, deimosRiseMinute: number, deimosSetHour: number, deimosSetMinute: number): Array<Interval>{
+export function MoonIntervals(phobosRiseHour: number, phobosRiseMinute: number, phobosSetHour: number, phobosSetMinute: number, deimosRiseHour: number, deimosRiseMinute: number, deimosSetHour: number, deimosSetMinute: number): Array<Interval>{
 
     var deimosIntervals = [{
         start: CalculateTimestamp(deimosRiseHour, deimosRiseMinute),
@@ -55,7 +55,15 @@ export function Moon(phobosRiseHour: number, phobosRiseMinute: number, phobosSet
     return MoonIntervals
 }
 
-export function MoonMaxIntervalMinutes(moonIntervals: Array<Interval>){
+export function Moon(phobosRiseHour: number, phobosRiseMinute: number, phobosSetHour: number, phobosSetMinute: number, deimosRiseHour: number, deimosRiseMinute: number, deimosSetHour: number, deimosSetMinute: number): number{
+
+    var moonIntervals = MoonIntervals(
+        phobosRiseHour, phobosRiseMinute,
+        phobosSetHour, phobosSetMinute,
+        deimosRiseHour, deimosRiseMinute,
+        deimosSetHour, deimosSetMinute
+    )
+
     return moonIntervals.reduce((maxMinutes, interval) => {
         const difference = CalculateDifference(interval.start, interval.end);
         return Math.max(maxMinutes, difference);
