@@ -1,82 +1,66 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, type Ref, watch } from "vue";
+import { ref, type Ref, watch } from "vue";
 import SolarSystem from './components/SolarSystem.vue'
+import { Moon, type Interval, CalculateTimestamp, CalculateDifference, MoonMaxIntervalMinutes } from "./functions/Moon";
 
-const phobosRiseHours = ref(0)
-const phobosRiseMinuets = ref(0)
-const phobosSetHours = ref(0)
-const phobosSetMinutes = ref(0)
-const deimosRiseHours = ref(0)
-const deimosRiseMinuets = ref(0)
-const deimosSetHours = ref(0)
-const deimosSetMinutes = ref(0)
-const moonMinutes = ref(1)
-const moonsStart = ref(0)
-const moonsEnd = ref(0)
+const HOUR_MIN = 0;
+const HOUR_MAX = 24;
+const MINUTE_MIN = 0;
+const MINUTE_MAX = 99;
+
+const phobosRiseHours = ref(HOUR_MIN)
+const phobosRiseMinutes = ref(MINUTE_MIN)
+const phobosSetHours = ref(HOUR_MIN)
+const phobosSetMinutes = ref(MINUTE_MIN)
+const deimosRiseHours = ref(HOUR_MIN)
+const deimosRiseMinutes = ref(MINUTE_MIN)
+const deimosSetHours = ref(HOUR_MIN)
+const deimosSetMinutes = ref(MINUTE_MIN)
+const moonMinutes = ref(0)
+const moonInterval = ref<Array<Interval>>([])
 const errorMessage = ref("")
 
-watch(phobosRiseHours, (newValue) => {
-  //TODO ooooder er rechnet automatisch modulo, hmmmmmm
-  if(newValue > 24){
-    phobosRiseHours.value = 24
-  }
-  if(newValue < 0){
-    phobosRiseHours.value = 0
-  }
-  if(!isNaN(newValue)){
-    phobosRiseHours.value = 0
-  }
-})
+watch(phobosRiseHours, (newValue) => {addWatcherHours(phobosRiseHours, newValue)})
+watch(phobosSetHours, (newValue) => {addWatcherHours(phobosSetHours, newValue)})
+watch(deimosRiseHours, (newValue) => {addWatcherHours(deimosRiseHours, newValue)})
+watch(deimosSetHours, (newValue) => {addWatcherHours(deimosSetHours, newValue)})
 
+watch(phobosRiseMinutes, (newValue) => {addWatcherMinutes(phobosRiseMinutes, newValue)})
+watch(phobosSetMinutes, (newValue) => {addWatcherMinutes(phobosSetMinutes, newValue)})
+watch(deimosRiseMinutes, (newValue) => {addWatcherMinutes(deimosRiseMinutes, newValue)})
+watch(deimosSetMinutes, (newValue) => {addWatcherMinutes(deimosSetMinutes, newValue)})
 
-function calculateOverlappingMoonMinutes(): void {
-  var phobosRise = CalculateTimestamp(phobosRiseHours.value, phobosRiseMinuets.value)
-  var phobosSet = CalculateTimestamp(phobosSetHours.value, phobosSetMinutes.value)
-  var deimosRise = CalculateTimestamp(deimosRiseHours.value, deimosRiseMinuets.value)
-  var deimosSet = CalculateTimestamp(deimosSetHours.value, deimosSetMinutes.value)
-
-  moonsStart.value = 0
-  moonsEnd.value = 0
-
-  //adapt day border
-  if(phobosRise > phobosSet) phobosSet += 2500
-  if(deimosRise > deimosSet) deimosSet += 2500
-
-  //Twiligh
-  if(phobosRise == deimosSet || phobosSet == deimosRise){
-    moonMinutes.value = 1
-    return
-  }
-
-
-  var set = Math.min(phobosSet, deimosSet)
-  var rise = Math.max(phobosRise, deimosRise)
-
-  if(rise > set){
-    moonMinutes.value = 0
-    return
-  }
-
-  moonsStart.value = rise
-  moonsEnd.value = set
-
-  //TODO 2 intervalls
-  //thought process: rechne die rise zeiten auch nochmal hoch und schau check wether they are before the set jeweils mit anderen planets
-  //TODO number input check
-  if(set == deimosSet && rise == phobosRise){
-    deimosRise += 2500
-
-    if(deimosRise < phobosSet)
-      console.log('second intervall')
-  }
-
-
-
-  moonMinutes.value = set - rise
+function addWatcherHours(reference: Ref<number>, value: number){
+  reference.value = value;
+  if(value > HOUR_MAX){ reference.value = HOUR_MAX}
+  if(value < HOUR_MIN){ reference.value = HOUR_MIN }
+  if(value == HOUR_MAX + 1){ reference.value = HOUR_MIN }
+  if(value == HOUR_MIN - 1){ reference.value = HOUR_MAX }
+  if(isNaN(value)){ reference.value = HOUR_MIN }
 }
 
-function CalculateTimestamp(hours: number, minutes: number): number{
-  return hours * 100 + minutes
+function addWatcherMinutes(reference: Ref<number>, value: number){
+  reference.value = value;
+  if(value > MINUTE_MAX){ reference.value = MINUTE_MAX}
+  if(value < MINUTE_MIN){ reference.value = MINUTE_MIN }
+  if(value == MINUTE_MAX + 1){ reference.value = MINUTE_MIN }
+  if(value == MINUTE_MIN - 1){ reference.value = MINUTE_MAX }
+  if(isNaN(value)){ reference.value = MINUTE_MIN }
+}
+
+function calculateOverlappingMoonMinutes(): void {
+  moonInterval.value = Moon(
+    phobosRiseHours.value, phobosRiseMinutes.value,
+    phobosSetHours.value, phobosSetMinutes.value,
+    deimosRiseHours.value, deimosRiseMinutes.value,
+    deimosSetHours.value, deimosSetMinutes.value
+  )
+
+  moonMinutes.value = MoonMaxIntervalMinutes(moonInterval.value)
+}
+
+function addLeadingZeros(num: number){
+  return ('0000'+num).slice(-4);
 }
 </script>
 
@@ -96,12 +80,12 @@ function CalculateTimestamp(hours: number, minutes: number): number{
 
           <div>
             <div class="inline-block">
-              <input v-model="(phobosRiseHours)"  v-on:change="calculateOverlappingMoonMinutes" class="text-right inline-block border border-white rounded bg-white bg-opacity-10 pl-2" type="number" step="1" min="0" max="24">
+              <input v-model="(phobosRiseHours)"  v-on:change="calculateOverlappingMoonMinutes" class="text-right inline-block border border-white rounded bg-white bg-opacity-10 pl-2" type="number" step="1" :min="HOUR_MIN - 1" :max="HOUR_MAX + 1">
               <span class="font-mono px-1 inline-block bg-inherit">h</span>
             </div>
 
             <div class="inline-block ml-2">
-              <input v-model="(phobosRiseMinuets)"  v-on:change="calculateOverlappingMoonMinutes" class="text-right inline-block border border-white rounded bg-white bg-opacity-10 pl-2" type="number" step="1" min="0" max="99">
+              <input v-model="(phobosRiseMinutes)"  v-on:change="calculateOverlappingMoonMinutes" class="text-right inline-block border border-white rounded bg-white bg-opacity-10 pl-2" type="number" step="1" :min="MINUTE_MIN - 1" :max="MINUTE_MAX + 1">
               <span class="font-mono px-1 inline-block bg-inherit">min</span>
             </div>
           </div>
@@ -114,12 +98,12 @@ function CalculateTimestamp(hours: number, minutes: number): number{
 
           <div>
             <div class="inline-block">
-              <input v-model="(phobosSetHours)"  v-on:change="calculateOverlappingMoonMinutes" class="text-right inline-block border border-white rounded bg-white bg-opacity-10 pl-2" type="number" step="1" min="0" max="24">
+              <input v-model="(phobosSetHours)"  v-on:change="calculateOverlappingMoonMinutes" class="text-right inline-block border border-white rounded bg-white bg-opacity-10 pl-2" type="number" step="1" :min="HOUR_MIN - 1" :max="HOUR_MAX + 1">
               <span class="font-mono px-1 inline-block bg-inherit">h</span>
             </div>
 
             <div class="inline-block ml-2">
-              <input v-model="(phobosSetMinutes)"  v-on:change="calculateOverlappingMoonMinutes" class="text-right inline-block border border-white rounded bg-white bg-opacity-10 pl-2" type="number" step="1" min="0" max="99">
+              <input v-model="(phobosSetMinutes)"  v-on:change="calculateOverlappingMoonMinutes" class="text-right inline-block border border-white rounded bg-white bg-opacity-10 pl-2" type="number" step="1" :min="MINUTE_MIN - 1" :max="MINUTE_MAX + 1">
               <span class="font-mono px-1 inline-block bg-inherit">min</span>
             </div>
           </div>
@@ -136,12 +120,12 @@ function CalculateTimestamp(hours: number, minutes: number): number{
 
           <div>
             <div class="inline-block">
-              <input v-model="(deimosRiseHours)"  v-on:change="calculateOverlappingMoonMinutes" class="text-right inline-block border border-white rounded bg-white bg-opacity-10 pl-2" type="number" step="1" min="0" max="24">
+              <input v-model="(deimosRiseHours)"  v-on:change="calculateOverlappingMoonMinutes" class="text-right inline-block border border-white rounded bg-white bg-opacity-10 pl-2" type="number" step="1" :min="HOUR_MIN - 1" :max="HOUR_MAX + 1">
               <span class="font-mono px-1 inline-block bg-inherit">h</span>
             </div>
 
             <div class="inline-block ml-2">
-              <input v-model="(deimosRiseMinuets)"  v-on:change="calculateOverlappingMoonMinutes" class="text-right inline-block border border-white rounded bg-white bg-opacity-10 pl-2" type="number" step="1" min="0" max="99">
+              <input v-model="(deimosRiseMinutes)"  v-on:change="calculateOverlappingMoonMinutes" class="text-right inline-block border border-white rounded bg-white bg-opacity-10 pl-2" type="number" step="1" :min="MINUTE_MIN - 1" :max="MINUTE_MAX + 1">
               <span class="font-mono px-1 inline-block bg-inherit">min</span>
             </div>
           </div>
@@ -154,12 +138,12 @@ function CalculateTimestamp(hours: number, minutes: number): number{
 
           <div>
             <div class="inline-block">
-              <input v-model="(deimosSetHours)"  v-on:change="calculateOverlappingMoonMinutes" class="text-right inline-block border border-white rounded bg-white bg-opacity-10 pl-2" type="number" step="1" min="0" max="24">
+              <input v-model="(deimosSetHours)"  v-on:change="calculateOverlappingMoonMinutes" class="text-right inline-block border border-white rounded bg-white bg-opacity-10 pl-2" type="number" step="1" :min="HOUR_MIN - 1" :max="HOUR_MAX + 1">
               <span class="font-mono px-1 inline-block bg-inherit">h</span>
             </div>
 
             <div class="inline-block ml-2">
-              <input v-model="(deimosSetMinutes)"  v-on:change="calculateOverlappingMoonMinutes" class="text-right inline-block border border-white rounded bg-white bg-opacity-10 pl-2" type="number" step="1" min="0" max="99">
+              <input v-model="(deimosSetMinutes)"  v-on:change="calculateOverlappingMoonMinutes" class="text-right inline-block border border-white rounded bg-white bg-opacity-10 pl-2" type="number" step="1" :min="MINUTE_MIN - 1" :max="MINUTE_MAX + 1">
               <span class="font-mono px-1 inline-block bg-inherit">min</span>
             </div>
           </div>
@@ -167,19 +151,24 @@ function CalculateTimestamp(hours: number, minutes: number): number{
       </div>
 
       <div>
-        <div class="font-mono font-semibold">Result: {{moonMinutes}} min</div>
+        <div class="font-mono font-semibold mb-2">Biggest Interval: {{moonMinutes}} min</div>
+        <div class="font-mono text-xs">
+          Intervals found:
+          <div v-for="interval in moonInterval">
+            Interval from {{addLeadingZeros(interval.start)}} to {{addLeadingZeros(interval.end)}}: {{CalculateDifference(interval.start, interval.end)}} min
+          </div>
+        </div>
         <div v-if="errorMessage" class="font-mono font-semibold text-red-500">Error: {{errorMessage}}</div>
       </div>
 
       </div>
       <div class="w-full">
         <SolarSystem 
-          :deimos-rise="CalculateTimestamp(deimosRiseHours, deimosRiseMinuets)"
+          :deimos-rise="CalculateTimestamp(deimosRiseHours, deimosRiseMinutes)"
           :deimos-set="CalculateTimestamp(deimosSetHours, deimosSetMinutes)"
-          :phobos-rise="CalculateTimestamp(phobosRiseHours, phobosRiseMinuets)"
+          :phobos-rise="CalculateTimestamp(phobosRiseHours, phobosRiseMinutes)"
           :phobos-set="CalculateTimestamp(phobosSetHours, phobosSetMinutes)"
-          :moons-end="moonsEnd"
-          :moons-start="moonsStart"
+          :moonInterval="moonInterval"
        />
       </div>
     </div>
