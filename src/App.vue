@@ -61,10 +61,30 @@ function calculateOverlappingMoonMinutes(): void {
     deimosRiseHours.value, deimosRiseMinutes.value,
     deimosSetHours.value, deimosSetMinutes.value
   )
+
+  // runTest()
 }
 
 function addLeadingZeros(num: number){
   return ('0000'+num).slice(-4);
+}
+
+function runTest(){
+  console.log(Moon(2,56,13,48,6,11,22,84));
+  console.log(Moon(6,87,18,3,1,34,12,8));
+  console.log(Moon(4,85,22,42,8,68,14,24));
+  console.log(Moon(11,28,16,28,5,79,22,25));
+  console.log(Moon(2,0,5,0,5,0,14,0));
+  console.log(Moon(9,0,12,0,3,0,9,0));
+  console.log(Moon(7,60,18,32,20,8,16,2));
+  console.log(Moon(20,30,6,24,14,88,23,17));
+  console.log(Moon(19,44,3,99,14,93,12,59));
+  console.log(Moon(14,18,8,78,22,61,4,7));
+  console.log(Moon(19,77,14,74,16,94,10,51));
+  console.log(Moon(19,44,8,51,15,40,1,2));
+  console.log(Moon(23,71,16,64,14,15,5,4));
+  console.log(Moon(10,93,7,44,20,95,13,58));
+  console.log(Moon(1,39,8,5,12,39,18,91));
 }
 </script>
 

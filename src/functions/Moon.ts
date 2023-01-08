@@ -82,6 +82,7 @@ export function CalculateTimestamp(hours: number, minutes: number): number{
     return hours * 100 + minutes
 }
 
-export function CalculateDifference (a: number, b: number){
-  return Math.abs(a - b)
+export function CalculateDifference (start: number, end: number){
+    if(end < start) end += DAY_MAX
+    return Math.abs(start - end)
 }
